@@ -1,5 +1,7 @@
 import expressAsyncHandler from "express-async-handler";
 import Product from "../models/Product.js";
+import Category from "../models/Category.js";
+import Brand from "../models/Brand.js";
 
 // @desc   Create Product
 // @route  GET /api/v1/products
@@ -14,6 +16,20 @@ export const createProduct = expressAsyncHandler(async (req, res) => {
   if (productExists) {
     throw new Error("This product is already present");
   }
+  //find the category
+  const categoryFound = await Category.findOne({ name: category });
+  if (!categoryFound) {
+    throw new Error(
+      "category not found,please first create category or check category name"
+    );
+  }
+  //find the brand
+  const brandFound = await Brand.findOne({ name: brand });
+  if (!brandFound) {
+    throw new Error(
+      "brand not found,please first create brand or check brand name"
+    );
+  }
   const newProduct = await Product.create({
     name,
     description,
@@ -25,6 +41,16 @@ export const createProduct = expressAsyncHandler(async (req, res) => {
     price,
     totalQty,
   });
+  //push the product into category
+  categoryFound.products.push(newProduct._id);
+
+  //re save
+  await categoryFound.save();
+
+  //push the product into brand
+  brandFound.products.push(newProduct._id);
+  //re save
+  await brandFound.save();
   res.json({
     status: "success",
     message: "Successfully product added",
@@ -136,16 +162,20 @@ export const updateProduct = expressAsyncHandler(async (req, res) => {
   const { name, description, brand, category, sizes, colors, price, totalQty } =
     req.body;
   const { id } = req.params;
-  const updatedProduct = await Product.findByIdAndUpdate(id, {
-    name,
-    description,
-    brand,
-    category,
-    sizes,
-    colors,
-    price,
-    totalQty,
-  },{new:true});
+  const updatedProduct = await Product.findByIdAndUpdate(
+    id,
+    {
+      name,
+      description,
+      brand,
+      category,
+      sizes,
+      colors,
+      price,
+      totalQty,
+    },
+    { new: true }
+  );
   res.json({
     status: "success",
     message: "Successfully product updated",

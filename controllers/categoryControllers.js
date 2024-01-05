@@ -11,7 +11,7 @@ export const createCategory = expressAsyncHandler(async (req, res) => {
     throw new Error("Category already exists");
   }
   const category = await Category.create({
-    name,
+    name: name.toLowerCase(),
     user: req.userId,
   });
 
